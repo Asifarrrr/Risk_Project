@@ -1,182 +1,150 @@
 # Credit Risk Prediction
 
-A Machine Learning project that predicts loan status based on personal, financial, and credit-related information. The project uses a Random Forest Classifier to analyze applicant features and generate predictions through an interactive web application.
+A Machine Learning project that predicts loan status based on personal, financial, and credit-related information using a Random Forest Classifier. The project combines data preprocessing, model training, FastAPI backend development, and an interactive Streamlit application for generating predictions and exploring credit risk data.
 
 ## Project Overview
 
-The main goal of this project is to build an end-to-end Machine Learning application that combines data preprocessing, model training, API development, and data visualization.
+The objective of this project is to build an end-to-end Machine Learning application that analyzes applicant information and predicts loan status based on patterns learned from historical credit data.
 
-Users can enter personal and financial information through a Streamlit interface and receive a prediction from a trained Random Forest model. The application also includes an interactive dashboard for exploring and visualizing the credit risk dataset.
+The application is divided into three main components:
 
-## Technologies Used
+- **Data Processing and Model Training:** Cleaning the dataset, preparing features, and training the classification model.
+- **FastAPI Backend:** Handling prediction requests, validating input data, and communicating with the trained model.
+- **Streamlit Frontend:** Providing an interactive interface for making predictions and visualizing dataset information.
+
+## Technologies & Libraries
 
 - **Python:** Main programming language.
 - **Pandas:** Data manipulation and preprocessing.
 - **Scikit-learn:** Machine Learning model development and training.
 - **Random Forest Classifier:** Classification algorithm used for loan status prediction.
 - **FastAPI:** Backend API for handling prediction requests.
-- **Pydantic:** Input data validation.
-- **Streamlit:** Interactive web application and user interface.
-- **Plotly:** Interactive data visualizations.
-- **Joblib:** Saving and loading trained models and processed data.
-
-## Project Structure
-
-```text
-Credit-Risk-Prediction/
-│
-├── data_cleaning.py       # Data preprocessing and model training
-├── api.py                 # FastAPI backend and prediction endpoint
-├── app.py                 # Streamlit frontend and dashboard
-│
-├── credit_risk_dataset.csv
-├── data_frame.pkl         # Generated processed dataset
-├── risk_model.pkl         # Generated trained model
-├── model_columns.pkl      # Generated model feature names
-│
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
-
-The generated `.pkl` files and original dataset are not included in the Git repository. Run the preprocessing and training script to generate the required model files.
+- **Pydantic:** Input validation and data structure management.
+- **Streamlit:** Interactive web application.
+- **Plotly:** Interactive data visualization.
+- **Joblib:** Saving and loading trained models and processed datasets.
 
 ## Data Preprocessing
 
-Before training the model, several preprocessing operations are performed:
+Several preprocessing operations are performed to prepare the dataset for model training:
 
 - Removing duplicate records.
 - Cleaning and standardizing categorical values.
 - Handling missing values.
 - Replacing unrealistic age and employment length values.
-- Calculating the loan-to-income percentage.
+- Calculating the loan-to-income ratio.
 - Converting categorical values into numerical representations.
 - Applying One-Hot Encoding to categorical features.
-- Removing records with income values above the selected threshold.
+- Filtering records based on income values.
 
 ## Machine Learning Model
 
-The project uses a Random Forest Classifier from Scikit-learn.
+The project uses a **Random Forest Classifier** from Scikit-learn.
 
-Selected model parameters:
+The selected hyperparameters are:
 
-- Number of estimators: 200
-- Maximum depth: 8
-- Minimum samples per leaf: 15
-- Minimum samples split: 20
-- Class weight: Balanced
-- Random state: 42
+| Parameter | Value |
+|---|---:|
+| Number of estimators | 200 |
+| Maximum depth | 8 |
+| Minimum samples per leaf | 15 |
+| Minimum samples split | 20 |
+| Class weight | Balanced |
+| Random state | 42 |
 
-The dataset is divided into training and testing sets, with 85% used for training and 15% reserved for testing.
+The dataset is divided into training and testing sets:
 
-## Backend API
+- Training data: 85%
+- Testing data: 15%
 
-FastAPI handles communication between the frontend and the trained Machine Learning model.
+The model is trained using the processed applicant features to predict the target variable, `loan_status`.
 
-The API provides a prediction endpoint:
-
-`POST /predict`
-
-It receives applicant information as JSON, validates the input using Pydantic, prepares the features in the correct order, and passes them to the trained model.
-
-The response contains:
-
-- **Prediction:** The predicted loan status.
-- **Probability:** The model's estimated probability for class 1.
-
-## Streamlit Application
-
-The frontend provides two main functionalities:
+## Application Features
 
 ### Loan Status Prediction
 
-Users can enter information such as:
+The Streamlit interface allows users to enter applicant information, including:
 
-- Age and annual income.
+- Age and personal income.
 - Employment length.
 - Loan amount and interest rate.
-- Credit history.
+- Loan-to-income ratio.
+- Credit history length.
 - Previous default status.
 - Home ownership.
 - Loan intent.
 - Loan grade.
 
-The application sends these features to the FastAPI backend and displays the prediction and its associated probability.
+The submitted information is sent to the FastAPI backend, where the trained model generates a prediction and its associated probability.
 
-### Data Visualization Dashboard
+### Interactive Data Visualization Dashboard
 
-The dashboard allows users to explore the dataset using interactive filters and charts.
+The application also provides a dashboard for exploring the processed dataset.
 
-It includes:
+Available features include:
 
 - Income range filtering.
 - Loan grade filtering.
 - Loan intent filtering.
-- Age vs. income scatter plot.
-- Loan grade distribution pie chart.
+- Age vs. income scatter plot, categorized by loan status.
+- Loan grade distribution pie chart for records with a positive loan status.
 
-## Installation and Setup
+All visualizations are created using Plotly and integrated into Streamlit.
 
-### 1. Clone the repository
+## Backend API
 
-```bash
-git clone https://github.com/YOUR_USERNAME/Credit-Risk-Prediction.git
-cd Credit-Risk-Prediction
+FastAPI connects the frontend to the trained Machine Learning model.
+
+**Endpoint:**
+
+`POST /predict`
+
+The API performs the following operations:
+
+1. Receives applicant information in JSON format.
+2. Validates the input using Pydantic.
+3. Converts the input into a Pandas DataFrame.
+4. Aligns the feature columns with the model's original training structure.
+5. Generates a prediction using the Random Forest Classifier.
+6. Returns the prediction and class 1 probability as a JSON response.
+
+## Project Architecture
+
+```text
+User
+ |
+ v
+Streamlit Frontend
+ |
+ | JSON Request
+ v
+FastAPI Backend
+ |
+ v
+Input Validation
+ |
+ v
+Feature Alignment
+ |
+ v
+Random Forest Model
+ |
+ v
+Prediction + Probability
+ |
+ v
+Streamlit Results
 ```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Prepare the dataset and train the model
-
-Place the original dataset in the project directory and run:
-
-```bash
-python data_cleaning.py
-```
-
-This generates the required model and processed dataset files.
-
-### 4. Start the FastAPI server
-
-```bash
-uvicorn api:app --reload
-```
-
-The API will be available at:
-
-`http://127.0.0.1:8000`
-
-FastAPI documentation:
-
-`http://127.0.0.1:8000/docs`
-
-### 5. Start the Streamlit application
-
-Open another terminal and run:
-
-```bash
-streamlit run app.py
-```
-
-The application will open in your browser.
 
 ## Future Improvements
 
-- Add model evaluation metrics and performance analysis.
-- Improve error handling and input validation.
-- Experiment with other Machine Learning algorithms.
-- Improve the dashboard with additional visualizations.
-- Deploy the API and Streamlit application online.
-- Add automated testing.
+- Add comprehensive model evaluation and performance metrics.
+- Experiment with different classification algorithms.
+- Improve data preprocessing and validation.
+- Expand the dashboard with additional visualizations.
+- Deploy the application online.
+- Implement automated testing.
 
 ## Disclaimer
 
-This project is developed for educational and Machine Learning practice purposes. Predictions should not be considered professional financial advice or used as the sole basis for actual lending decisions.
-
-## Author
-
-Developed as a personal Machine Learning project to practice data preprocessing, classification, API development, and interactive data visualization.
+This project is developed for educational and Machine Learning practice purposes. Predictions are not professional financial advice and should not be used as the sole basis for real-world lending decisions.
