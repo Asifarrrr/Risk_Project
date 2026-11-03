@@ -1,27 +1,44 @@
 import joblib
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 # ============================= FastAPI Application =============================
 
 # Initialize the FastAPI application.
 app = FastAPI(title='Risk API')
 
+# Configure CORS middleware to allow cross-origin requests from the frontend dashboard.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================= Dataset Endpoint =============================
+
+# Endpoint to fetch and return the dataset records as JSON for frontend visualizations.
+@app.get("/data")
+def get_data():
+    df = joblib.load(r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\models\data_frame.pkl')
+    return Response(df.to_json(orient="records"), media_type="application/json")
+
 
 # ============================= Model Loading =============================
 
 # Load the previously trained Random Forest model.
-model = joblib.load('risk_model.pkl')
+model = joblib.load(r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\data\risk_model.pkl')
 
 # Load the feature names and their original order used during model training.
-model_columns = joblib.load('model_columns.pkl')
+model_columns = joblib.load(r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\models\model_columns.pkl')
 
 
 # ============================= Input Data Validation =============================
 
 # Define the structure and data types expected from incoming API requests.
-# Pydantic automatically validates the received input.
 class PersonInput(BaseModel):
     person_age: int
     person_income: float | int
@@ -66,13 +83,12 @@ def Loan_Prediction(data: PersonInput):
     df = pd.DataFrame([data.model_dump()])
 
     # Reorder the input columns to match the model's training feature order.
-    # Missing columns, if any, are filled with zeros.
     df = df.reindex(columns=model_columns, fill_value=0)
 
     # Generate the predicted loan status.
     prediction = int(model.predict(df)[0])
 
-    # Calculate the probability associated with class 1 (positive loan status).
+    # Calculate the probability associated with class 1 (positive loan status / default).
     probability = float(model.predict_proba(df)[0][1])
 
     # Return the prediction and probability as a JSON response.

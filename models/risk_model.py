@@ -9,7 +9,7 @@ df = None
 
 try:
     # Load the original credit risk dataset.
-    df = pd.read_csv(r"C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\credit_risk_dataset.csv")
+    df = pd.read_csv(r"C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\data\credit_risk_dataset.csv")
 
 except FileNotFoundError:
     pass
@@ -120,11 +120,11 @@ model.fit(x_train, y_train)
 # ============================= Model and Data Export =============================
 
 # Save the processed dataset for the Streamlit dashboard.
-joblib.dump(df, 'data_frame.pkl')
+joblib.dump(df,r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\models\data_frame.pkl')
 
 # Save the trained Random Forest model for future predictions.
-joblib.dump(model, 'risk_model.pkl')
+joblib.dump(model,r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\data\risk_model.pkl')
 
 # Save the feature names and their order to ensure that future prediction
 # inputs follow the same structure expected by the trained model.
-joblib.dump(list(x.columns), 'model_columns.pkl')
+joblib.dump(list(x.columns),r'C:\Users\pc\PycharmProjects\WelcomeScreen\Mini Projects\Risk_Project\models\model_columns.pkl')

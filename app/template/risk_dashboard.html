@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Risk Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #07090e;
+  --panel: #0d111a;
+  --panel2: #141b27;
+  --line: #1e293b;
+  --text: #f1f5f9;
+  --mute: #64748b;
+  --accent: #3b82f6;
+  --emerald: #10b981;
+  --emerald-glow: rgba(16, 185, 129, 0.25);
+  --rose: #f43f5e;
+  --rose-glow: rgba(244, 63, 94, 0.25);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--text);
+  font:15px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;
+  background:
+    radial-gradient(1000px 600px at 80% -20%, rgba(59,130,246,0.12), transparent 70%),
+    radial-gradient(800px 500px at -10% 110%, rgba(16,185,129,0.08), transparent 70%),
+    var(--bg);
+  background-attachment:fixed;
+}
+h1,h2,h3{font-weight:700;margin:0;letter-spacing:-0.02em}
+.app{display:grid;grid-template-columns:290px 1fr;min-height:100vh}
+
+/* Sidebar */
+aside{
+  background:rgba(13, 17, 26, 0.8);
+  backdrop-filter:blur(16px);
+  border-right:1px solid var(--line);
+  padding:28px 22px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow:auto;
+}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.logo{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg, var(--accent), var(--emerald));
+  display:grid;place-items:center;font-size:22px;box-shadow:0 0 20px rgba(59,130,246,0.3);
+}
+aside h3{font-size:18px}
+aside p{color:var(--mute);margin:0 0 28px;font-size:13px}
+.fgroup{margin-bottom:26px}
+.fgroup>label{display:block;font-weight:600;margin-bottom:12px;font-size:13px;color:var(--text)}
+
+/* Dual Slider */
+.range-vals{display:flex;justify-content:space-between;margin-bottom:8px;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--emerald)}
+.dual{position:relative;height:28px}
+.track{position:absolute;top:12px;left:0;right:0;height:4px;background:var(--line);border-radius:4px}
+.fill{position:absolute;height:100%;background:linear-gradient(90deg,var(--accent),var(--emerald));border-radius:4px}
+.dual input{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dual input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:all;width:18px;height:18px;border-radius:50%;background:var(--text);border:3px solid var(--bg);box-shadow:0 0 10px rgba(0,0,0,0.5);cursor:grab}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel2);color:var(--mute);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:12px;transition:.18s}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;box-shadow:0 0 12px rgba(59,130,246,0.4)}
+
+/* Main Content */
+main{padding:32px 38px 60px;max-width:1400px;width:100%}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+header h1{font-size:32px;line-height:1.1}
+header p{margin:6px 0 0;color:var(--mute);font-size:14px}
+.status{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);padding:8px 16px;border-radius:999px;font-size:13px;color:var(--mute)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--rose)}
+.status.ok .dot{background:var(--emerald);box-shadow:0 0 10px var(--emerald)}
+
+/* Cards & Grid */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:#334155}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi span{color:var(--mute);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
+.kpi b{display:block;font:700 28px "JetBrains Mono",monospace;margin-top:6px;color:var(--text)}
+.row{display:grid;gap:20px;margin-bottom:24px}
+.card h2{font-size:18px;margin-bottom:4px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:13px}
+
+/* Form inputs */
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.field label{display:block;font-size:12px;color:var(--mute);margin-bottom:6px;font-weight:600}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font:inherit;font-size:13px;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+
+button.primary{
+  margin-top:20px;width:100%;
+  background:linear-gradient(135deg, var(--accent), #2563eb);
+  color:#fff;border:0;border-radius:10px;padding:14px;
+  font:600 14px "Plus Jakarta Sans";cursor:pointer;
+  transition:transform .15s, box-shadow .15s;
+  box-shadow:0 4px 14px rgba(59,130,246,0.3);
+}
+button.primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,0.5)}
+button.primary:disabled{opacity:.6;cursor:wait;transform:none}
+
+/* Circular Gauge Ring */
+.ticket{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 50% 0%, var(--panel2), var(--panel))}
+.ring{position:relative;width:200px;height:200px;margin:6px 0 14px}
+.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring circle{fill:none;stroke-width:12;stroke-linecap:round}
+.ring .bg{stroke:var(--line)}
+.ring .fg{stroke-dasharray:502;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1), stroke .4s}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;font:700 36px "JetBrains Mono",monospace}
+.verdict{font:700 20px "Plus Jakarta Sans";letter-spacing:-0.01em}
+.verdict.approved{color:var(--emerald)}
+.verdict.high-risk{color:var(--rose)}
+.hint{color:var(--mute);font-size:13px;max-width:260px;margin:6px 0 0}
+.err{color:var(--rose);font-size:13px;margin-top:10px}
+
+.cwrap{position:relative;height:300px}
+
+/* Data Table */
+details.card summary{cursor:pointer;font:600 18px "Plus Jakarta Sans"}
+.tbl{overflow:auto;max-height:380px;margin-top:16px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-family:"JetBrains Mono",monospace}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--panel);font-family:"Plus Jakarta Sans"}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+.pill{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.pill.approved{background:var(--emerald-glow);color:var(--emerald)}
+.pill.rejected{background:var(--rose-glow);color:var(--rose)}
+
+@media(max-width:1080px){.app{grid-template-columns:1fr}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+const API = 'http://127.0.0.1:8000';
+
+const INTENTS = ['Debt Consolidation', 'Education', 'Home Improvement', 'Medical', 'Personal', 'Venture'];
+const GRADES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+const COL = { emerald:'#10b981', rose:'#f43f5e', accent:'#3b82f6', mute:'#64748b', line:'#1e293b' };
+
+Chart.defaults.color = COL.mute;
+Chart.defaults.font.family = '"Plus Jakarta Sans", system-ui, sans-serif';
+
+/* Dual Slider Component */
+function DualSlider({ min, max, value: [a, b], onChange }) {
+  const pct = v => max === min ? 0 : (v - min) / (max - min) * 100;
+  return (
+    <div className="dual">
+      <div className="track"><div className="fill" style={{ left: pct(a) + '%', width: (pct(b) - pct(a)) + '%' }} /></div>
+      <input type="range" min={min} max={max} value={a} onChange={e => onChange([Math.min(+e.target.value, b), b])} />
+      <input type="range" min={min} max={max} value={b} onChange={e => onChange([a, Math.max(+e.target.value, a)])} />
+    </div>
+  );
+}
+
+/* Animated Counter Component */
+function Kpi({ label, value, decimals = 0, prefix = '', suffix = '' }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let id;
+    const start = v, end = value, duration = 600, t0 = performance.now();
+    const tick = now => {
+      const p = Math.min((now - t0) / duration, 1);
+      setV(start + (end - start) * p);
+      if (p < 1) id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [value]);
+
+  return (
+    <div className="card kpi">
+      <span>{label}</span>
+      <b>{prefix + Number(v).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix}</b>
+    </div>
+  );
+}
+
+/* Chart Canvas Wrapper */
+function ChartBox({ type, data, options, height }) {
+  const ref = useRef(), chart = useRef();
+  useEffect(() => {
+    chart.current = new Chart(ref.current, { type, data, options });
+    return () => chart.current.destroy();
+  }, []);
+  useEffect(() => {
+    if (!chart.current) return;
+    chart.current.data = data;
+    chart.current.update();
+  }, [data]);
+  return <div className="cwrap" style={height ? { height } : null}><canvas ref={ref} /></div>;
+}
+
+/* Predictor Form Component */
+function Predictor() {
+  const [f, setF] = useState({
+    age: 28, income: 60000, emp_len: 5, loan_amount: 10000,
+    loan_rate: 11.2, loan_income: 0.16, cred_hist: 4,
+    cb_def: 'No', own: 'Rent', intent: 'Debt Consolidation', grade: 'B'
+  });
+  const [res, setRes] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+
+  async function predict() {
+    const is = (a, b) => a === b ? 1 : 0;
+    const payload = {
+      person_age: +f.age,
+      person_income: +f.income,
+      person_emp_length: +f.emp_len,
+      loan_amnt: +f.loan_amount,
+      loan_int_rate: +f.loan_rate,
+      loan_percent_income: +f.loan_income,
+      cb_person_default_on_file: f.cb_def === 'Yes' ? 1 : 0,
+      cb_person_cred_hist_length: +f.cred_hist,
+      person_home_ownership_mortgage: is(f.own, 'Mortgage'),
+      person_home_ownership_other: is(f.own, 'Other'),
+      person_home_ownership_own: is(f.own, 'Own'),
+      person_home_ownership_rent: is(f.own, 'Rent'),
+      loan_intent_debtconsolidation: is(f.intent, 'Debt Consolidation'),
+      loan_intent_education: is(f.intent, 'Education'),
+      loan_intent_homeimprovement: is(f.intent, 'Home Improvement'),
+      loan_intent_medical: is(f.intent, 'Medical'),
+      loan_intent_personal: is(f.intent, 'Personal'),
+      loan_intent_venture: is(f.intent, 'Venture'),
+      loan_grade_a: is(f.grade, 'A'), loan_grade_b: is(f.grade, 'B'),
+      loan_grade_c: is(f.grade, 'C'), loan_grade_d: is(f.grade, 'D'),
+      loan_grade_e: is(f.grade, 'E'), loan_grade_f: is(f.grade, 'F'),
+      loan_grade_g: is(f.grade, 'G')
+    };
+
+    setLoading(true); setErr('');
+    try {
+      const r = await fetch(API + '/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      setRes({ default: j.Prediction === 1, prob: j.Probability });
+    } catch (e) {
+      setErr('Connection failed. Ensure FastAPI server is running on port 8000.');
+    }
+    setLoading(false);
+  }
+
+  const isRisk = res ? res.default : false;
+  const strokeColor = res ? (isRisk ? COL.rose : COL.emerald) : COL.line;
+  const pct = res ? (res.prob * 100).toFixed(1) : null;
+
+  return (
+    <div className="row" style={{ gridTemplateColumns: '1.2fr 0.8fr' }}>
+      <div className="card">
+        <h2>Applicant Assessment</h2>
+        <p className="sub">Enter applicant financial attributes for real-time model evaluation.</p>
+        <div className="form">
+          <div className="field"><label>Age</label><input type="number" value={f.age} onChange={set('age')} /></div>
+          <div className="field"><label>Annual Income ($)</label><input type="number" value={f.income} onChange={set('income')} /></div>
+          <div className="field"><label>Employment Length (Yrs)</label><input type="number" value={f.emp_len} onChange={set('emp_len')} /></div>
+          <div className="field"><label>Loan Amount ($)</label><input type="number" value={f.loan_amount} onChange={set('loan_amount')} /></div>
+          <div className="field"><label>Interest Rate (%)</label><input type="number" step="0.1" value={f.loan_rate} onChange={set('loan_rate')} /></div>
+          <div className="field"><label>Loan % of Income</label><input type="number" step="0.01" value={f.loan_income} onChange={set('loan_income')} /></div>
+          <div className="field"><label>Credit History (Yrs)</label><input type="number" value={f.cred_hist} onChange={set('cred_hist')} /></div>
+          <div className="field"><label>Historical Default</label><select value={f.cb_def} onChange={set('cb_def')}><option>No</option><option>Yes</option></select></div>
+          <div className="field"><label>Home Ownership</label><select value={f.own} onChange={set('own')}><option>Mortgage</option><option>Own</option><option>Rent</option><option>Other</option></select></div>
+          <div className="field"><label>Loan Intent</label><select value={f.intent} onChange={set('intent')}>{INTENTS.map(i => <option key={i}>{i}</option>)}</select></div>
+          <div className="field"><label>Loan Grade</label><select value={f.grade} onChange={set('grade')}>{GRADES.map(g => <option key={g}>{g}</option>)}</select></div>
+        </div>
+        <button className="primary" onClick={predict} disabled={loading}>{loading ? 'Evaluating Model...' : 'Calculate Risk Score'}</button>
+        {err && <div className="err">{err}</div>}
+      </div>
+
+      <div className="card ticket">
+        <div className="ring">
+          <svg viewBox="0 0 180 180">
+            <circle className="bg" cx="90" cy="90" r="80" />
+            <circle className="fg" cx="90" cy="90" r="80" style={{ stroke: strokeColor, strokeDashoffset: 502 * (1 - (res ? res.prob : 0)) }} />
+          </svg>
+          <div className="pct">{res ? pct + '%' : '–'}</div>
+        </div>
+        <div className={'verdict ' + (res ? (isRisk ? 'high-risk' : 'approved') : '')}>
+          {res ? (isRisk ? 'High Risk (Default Likely)' : 'Low Risk (Approved)') : 'Awaiting Inputs'}
+        </div>
+        <p className="hint">{res ? `Estimated probability of loan default is ${pct}%.` : 'Fill features and trigger prediction.'}</p>
+      </div>
+    </div>
+  );
+}
+
+/* Main Dashboard Application */
+function App() {
+  const [rows, setRows] = useState([]);
+  const [online, setOnline] = useState(null);
+  const [incomeRange, setIncomeRange] = useState([0, 1000000]);
+  const [selectedGrade, setSelectedGrade] = useState('A');
+  const [selectedIntent, setSelectedIntent] = useState('Debt Consolidation');
+
+  useEffect(() => {
+    fetch(API + '/data')
+      .then(r => r.json())
+      .then(d => {
+        setRows(d); setOnline(true);
+        const inc = d.map(r => r.person_income).filter(Boolean);
+        if (inc.length) setIncomeRange([Math.min(...inc), Math.max(...inc)]);
+      })
+      .catch(() => setOnline(false));
+  }, []);
+
+  const bounds = useMemo(() => {
+    if (!rows.length) return [0, 1000000];
+    const inc = rows.map(r => r.person_income).filter(Boolean);
+    return [Math.min(...inc), Math.max(...inc)];
+  }, [rows]);
+
+  // Transform and filter dataset matching Python logic
+  const filteredData = useMemo(() => {
+    return rows.filter(r => {
+      const incMatch = r.person_income >= incomeRange[0] && r.person_income <= incomeRange[1];
+      const gradeMatch = r['loan_grade_' + selectedGrade.toLowerCase()] === 1;
+      const intentMatch = r['loan_intent_' + selectedIntent.toLowerCase().replace(/\s+/g, '')] === 1;
+      return incMatch && gradeMatch && intentMatch;
+    });
+  }, [rows, incomeRange, selectedGrade, selectedIntent]);
+
+  // Chart 1: Scatter plot (Age vs Income colored by status)
+  const scatterData = useMemo(() => {
+    const pts0 = [], pts1 = [];
+    filteredData.forEach(r => {
+      const pt = { x: r.person_age, y: r.person_income };
+      if (r.loan_status === 1) pts1.push(pt); else pts0.push(pt);
+    });
+    return {
+      datasets: [
+        { label: 'Non-Default', data: pts0, backgroundColor: COL.emerald + 'bb', pointRadius: 5 },
+        { label: 'Defaulted', data: pts1, backgroundColor: COL.rose + 'bb', pointRadius: 5 }
+      ]
+    };
+  }, [filteredData]);
+
+  // Chart 2: Doughnut chart (Proportion of Loan Grades for selected Intent where status == 1)
+  const pieData = useMemo(() => {
+    const counts = GRADES.map(g => {
+      const colName = 'loan_grade_' + g.toLowerCase();
+      const intentCol = 'loan_intent_' + selectedIntent.toLowerCase().replace(/\s+/g, '');
+      return rows.filter(r => r.loan_status === 1 && r[intentCol] === 1 && r[colName] === 1).length;
+    });
+    return {
+      labels: GRADES.map(g => 'Grade ' + g),
+      datasets: [{
+        data: counts,
+        backgroundColor: [COL.emerald, COL.accent, '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', COL.rose],
+        borderColor: '#0d111a', borderWidth: 2
+      }]
+    };
+  }, [rows, selectedIntent]);
+
+  const gridOpts = { color: COL.line };
+  const scatterOpts = {
+    maintainAspectRatio: false,
+    scales: { x: { title: { display: true, text: 'Age' }, grid: gridOpts }, y: { title: { display: true, text: 'Income ($)' }, grid: gridOpts } },
+    plugins: { legend: { position: 'bottom' } }
+  };
+  const pieOpts = {
+    maintainAspectRatio: false, cutout: '65%',
+    plugins: { legend: { position: 'right' } }
+  };
+
+  return (
+    <div className="app">
+      <aside>
+        <div className="brand"><div className="logo">⚡</div><h3>Dashboard Filters</h3></div>
+        <p>Refine visual metrics by income, intent, and grade.</p>
+
+        <div className="fgroup">
+          <label>Income Range</label>
+          <div className="range-vals"><span>${incomeRange[0].toLocaleString()}</span><span>${incomeRange[1].toLocaleString()}</span></div>
+          <DualSlider min={bounds[0]} max={bounds[1]} value={incomeRange} onChange={setIncomeRange} />
+        </div>
+
+        <div className="fgroup">
+          <label>Loan Grade</label>
+          <div className="chips">
+            {GRADES.map(g => (
+              <button key={g} className={'chip' + (selectedGrade === g ? ' on' : '')} onClick={() => setSelectedGrade(g)}>
+                Grade {g}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="fgroup">
+          <label>Loan Intent</label>
+          <div className="chips">
+            {INTENTS.map(i => (
+              <button key={i} className={'chip' + (selectedIntent === i ? ' on' : '')} onClick={() => setSelectedIntent(i)}>
+                {i}
+              </button>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <header>
+          <div>
+            <h1>Loan Status Risk Engine</h1>
+            <p>Random Forest Machine Learning Classifier & Analytics Suite</p>
+          </div>
+          <div className={'status' + (online ? ' ok' : '')}>
+            <span className="dot" />
+            {online === null ? 'Checking API...' : online ? 'FastAPI Connected' : 'API Offline (Port 8000)'}
+          </div>
+        </header>
+
+        <section className="kpis">
+          <Kpi label="Total Records" value={rows.length} />
+          <Kpi label="Filtered Candidates" value={filteredData.length} />
+          <Kpi label="Selected Grade Defaults" value={filteredData.filter(r => r.loan_status === 1).length} />
+          <Kpi label="Avg Income (Filtered)" value={filteredData.length ? filteredData.reduce((a, b) => a + (b.person_income || 0), 0) / filteredData.length : 0} prefix="$" decimals={0} />
+        </section>
+
+        <Predictor />
+
+        {rows.length > 0 && (
+          <>
+            <section className="row" style={{ gridTemplateColumns: '1.2fr 0.8fr' }}>
+              <div className="card">
+                <h2>Age vs Income Distribution</h2>
+                <p className="sub">Filtered applicants mapped by age, income, and default history.</p>
+                <ChartBox type="scatter" data={scatterData} options={scatterOpts} />
+              </div>
+              <div className="card">
+                <h2>Defaults by Grade ({selectedIntent})</h2>
+                <p className="sub">Proportion of default cases across loan grades for target intent.</p>
+                <ChartBox type="doughnut" data={pieData} options={pieOpts} />
+              </div>
+            </section>
+
+            <details className="card">
+              <summary>First 100 Dataset Preview Rows</summary>
+              <div className="tbl">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Age</th>
+                      <th>Income</th>
+                      <th>Emp. Length</th>
+                      <th>Loan Amount</th>
+                      <th>Interest Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.slice(0, 100).map((r, i) => (
+                      <tr key={i}>
+                        <td><span className={'pill ' + (r.loan_status === 1 ? 'rejected' : 'approved')}>{r.loan_status === 1 ? 'Default' : 'Paid'}</span></td>
+                        <td>{r.person_age}</td>
+                        <td>${r.person_income?.toLocaleString()}</td>
+                        <td>{r.person_emp_length} yrs</td>
+                        <td>${r.loan_amnt?.toLocaleString()}</td>
+                        <td>{r.loan_int_rate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
